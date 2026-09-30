@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Medicine Chart</title>
+<title>Medicine chart</title>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f3f7f8;--card:#fff;--ink:#12272e;--mute:#5b6f76;--line:#d5e0e3;--brand:#0b5d6b;--on-brand:#fff;--due:#b45309;--due-bg:#fff1dc;--ok:#1d7a4a;--ok-bg:#e3f4ea;--r:16px;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -14,8 +14,11 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 18px/1.4 "Atkinson Hyperlegible",system-ui,sans-serif}
 main{max-width:620px;margin:0 auto;padding:20px 16px 48px}
 h1{font-size:30px;margin:0 0 2px}
-h2{font-size:20px;margin:28px 0 10px}
-.sub{color:var(--mute);margin:0 0 6px}
+h2{font-size:20px;margin:24px 0 10px}
+.sub{color:var(--mute);margin:0 0 14px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--line);padding:5px;border-radius:14px;margin-bottom:16px}
+.tab{border:0;background:transparent;color:var(--mute);font-weight:700;padding:12px;border-radius:10px;min-height:48px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--card);color:var(--ink)}
 .count{color:var(--mute);font-size:16px;margin:0 0 12px}
 .wrap{overflow-x:auto;background:var(--card);border:2px solid var(--line);border-radius:var(--r)}
 table{width:100%;border-collapse:collapse}
@@ -27,87 +30,124 @@ tr.done td{background:var(--ok-bg)}
 .time{font-weight:700;white-space:nowrap}
 .name{font-weight:700;overflow-wrap:anywhere}
 .meta{color:var(--mute);font-size:16px}
-button,input{font:inherit}
+button,input,select{font:inherit}
 .give{border:2px solid var(--brand);background:var(--brand);color:var(--on-brand);border-radius:12px;padding:10px 12px;font-weight:700;min-height:48px;cursor:pointer;white-space:nowrap}
 .done .give{background:transparent;color:var(--ok);border-color:var(--ok)}
 .due .give{background:var(--due);border-color:var(--due);color:#fff}
-button:focus-visible,input:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 form{background:var(--card);border:2px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:12px}
 label{display:grid;gap:4px;font-weight:700}
-input{padding:12px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);min-height:48px;width:100%}
+input,select{padding:12px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);min-height:48px;width:100%}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .add{background:var(--brand);color:var(--on-brand);border:0;border-radius:12px;padding:14px;font-weight:700;min-height:52px;cursor:pointer}
-.del{background:none;border:2px solid var(--line);color:var(--mute);border-radius:10px;padding:8px 12px;min-height:44px;cursor:pointer}
+.ghost{background:none;border:2px solid var(--line);color:var(--mute);border-radius:10px;padding:8px 12px;min-height:44px;cursor:pointer;font-weight:700}
+.acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 .empty{color:var(--mute);padding:18px;text-align:center}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
 <main>
   <h1>Medicine chart</h1>
   <p class="sub" id="today"></p>
-  <p class="count" id="cnt"></p>
-
-  <div class="wrap">
-    <table>
-      <thead><tr><th>Time</th><th>Medicine</th><th>Given</th></tr></thead>
-      <tbody id="list"></tbody>
-    </table>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-chart" aria-selected="true">Chart</button>
+    <button class="tab" role="tab" id="tab-edit" aria-selected="false">Add / Edit</button>
   </div>
 
-  <h2>Add a medicine</h2>
-  <form id="f">
-    <label>Medicine name<input id="n" required placeholder="Metformin"></label>
-    <div class="row">
-      <label>Dose<input id="d" placeholder="500 mg, 1 tablet"></label>
-      <label>Time<input id="t" type="time" required value="08:00"></label>
+  <section id="v-chart">
+    <p class="count" id="cnt"></p>
+    <div class="wrap">
+      <table>
+        <thead><tr><th>Time</th><th>Medicine</th><th>Given</th></tr></thead>
+        <tbody id="list"></tbody>
+      </table>
     </div>
-    <button class="add" type="submit">Add to chart</button>
-  </form>
+  </section>
 
-  <h2>Edit chart</h2>
-  <div class="wrap"><table><tbody id="mine"></tbody></table></div>
+  <section id="v-edit" hidden>
+    <h2 id="ftitle">Add a medicine</h2>
+    <form id="f">
+      <label>Medicine name<input id="n" required placeholder="Metformin"></label>
+      <label>Dose<input id="d" placeholder="500 mg, 1 tablet"></label>
+      <div>
+        <div style="font-weight:700;margin-bottom:4px">Time</div>
+        <div class="row3">
+          <select id="th" aria-label="Hour"></select>
+          <select id="tm" aria-label="Minute"></select>
+          <select id="tp" aria-label="AM or PM"><option>AM</option><option>PM</option></select>
+        </div>
+      </div>
+      <button class="add" type="submit" id="fbtn">Add to chart</button>
+      <button class="ghost" type="button" id="cancel" hidden>Cancel editing</button>
+    </form>
+    <h2>Medicines on the chart</h2>
+    <div class="wrap"><table><tbody id="mine"></tbody></table></div>
+  </section>
 </main>
 <script>
-var meds=[],log={};
+var meds=[],log={},editId=null;
 function load(){try{meds=JSON.parse(localStorage.getItem("pt_meds")||"[]");log=JSON.parse(localStorage.getItem("pt_log")||"{}")}catch(e){meds=[];log={}}}
 function save(){try{localStorage.setItem("pt_meds",JSON.stringify(meds));localStorage.setItem("pt_log",JSON.stringify(log))}catch(e){}}
 function key(){var d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
 function nowMin(){var d=new Date();return d.getHours()*60+d.getMinutes()}
 function mins(t){var p=t.split(":");return +p[0]*60+ +p[1]}
-function fmt(t){var p=t.split(":"),h=+p[0];return (h%12||12)+":"+p[1]+" "+(h<12?"AM":"PM")}
+function pad(n){return (n<10?"0":"")+n}
+function fmtHM(h,m){return (h%12||12)+":"+pad(m)+" "+(h<12?"AM":"PM")}
+function fmt(t){var p=t.split(":");return fmtHM(+p[0],+p[1])}
 function esc(s){var e=document.createElement("div");e.textContent=s;return e.innerHTML}
 function given(id){return log[key()]&&log[key()][id]}
+var $=function(i){return document.getElementById(i)};
+(function(){var h="",m="";for(var i=1;i<=12;i++)h+="<option>"+i+"</option>";for(var j=0;j<60;j++)m+="<option>"+pad(j)+"</option>";$("th").innerHTML=h;$("tm").innerHTML=m})();
+function setTime(t){var p=t.split(":"),h=+p[0];$("th").value=h%12||12;$("tm").value=p[1];$("tp").value=h<12?"AM":"PM"}
+function getTime(){var h=+$("th").value%12;if($("tp").value==="PM")h+=12;return pad(h)+":"+$("tm").value}
+function resetForm(){editId=null;$("f").reset();setTime("08:00");$("ftitle").textContent="Add a medicine";$("fbtn").textContent="Add to chart";$("cancel").hidden=true}
+function show(tab){
+  var c=tab==="chart";
+  $("v-chart").hidden=!c;$("v-edit").hidden=c;
+  $("tab-chart").setAttribute("aria-selected",c);$("tab-edit").setAttribute("aria-selected",!c);
+}
 function render(){
-  document.getElementById("today").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+  $("today").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
   var s=meds.slice().sort(function(a,b){return mins(a.time)-mins(b.time)});
   var done=s.filter(function(m){return given(m.id)}).length;
-  document.getElementById("cnt").textContent=s.length?done+" of "+s.length+" doses given today":"";
-  document.getElementById("list").innerHTML=s.length?s.map(function(m){
+  $("cnt").textContent=s.length?done+" of "+s.length+" doses given today":"";
+  $("list").innerHTML=s.length?s.map(function(m){
     var g=given(m.id),due=!g&&mins(m.time)<=nowMin();
     var label=g?"Given "+(g===true?"":g):(due?"Give now":"Mark given");
     return '<tr class="'+(g?"done":due?"due":"")+'"><td class="time">'+fmt(m.time)+'</td><td><div class="name">'+esc(m.name)+'</div><div class="meta">'+esc(m.dose||"")+'</div></td><td><button class="give" data-id="'+m.id+'">'+label+'</button></td></tr>';
-  }).join(""):'<tr><td class="empty" colspan="3">No medicines yet. Add one below.</td></tr>';
-  document.getElementById("mine").innerHTML=s.map(function(m){
-    return '<tr><td class="time">'+fmt(m.time)+'</td><td><div class="name">'+esc(m.name)+'</div><div class="meta">'+esc(m.dose||"")+'</div></td><td><button class="del" data-del="'+m.id+'">Remove</button></td></tr>';
-  }).join("");
+  }).join(""):'<tr><td class="empty" colspan="3">No medicines yet. Open the Add / Edit tab to add one.</td></tr>';
+  $("mine").innerHTML=s.length?s.map(function(m){
+    return '<tr><td class="time">'+fmt(m.time)+'</td><td><div class="name">'+esc(m.name)+'</div><div class="meta">'+esc(m.dose||"")+'</div></td><td><div class="acts"><button class="ghost" data-edit="'+m.id+'">Edit</button><button class="ghost" data-del="'+m.id+'">Remove</button></div></td></tr>';
+  }).join(""):'<tr><td class="empty" colspan="3">Nothing added yet.</td></tr>';
 }
-document.getElementById("list").addEventListener("click",function(e){
+$("tab-chart").onclick=function(){show("chart")};
+$("tab-edit").onclick=function(){show("edit")};
+$("list").addEventListener("click",function(e){
   var id=e.target.getAttribute("data-id");if(!id)return;
   log[key()]=log[key()]||{};
   if(log[key()][id]){delete log[key()][id]}
-  else{log[key()][id]=new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}
+  else{var d=new Date();log[key()][id]=fmtHM(d.getHours(),d.getMinutes())}
   save();render();
 });
-document.getElementById("mine").addEventListener("click",function(e){
-  var id=e.target.getAttribute("data-del");if(!id)return;
-  meds=meds.filter(function(m){return m.id!==id});save();render();
+$("mine").addEventListener("click",function(e){
+  var del=e.target.getAttribute("data-del"),ed=e.target.getAttribute("data-edit");
+  if(del){meds=meds.filter(function(m){return m.id!==del});if(editId===del)resetForm();save();render()}
+  if(ed){var m=meds.filter(function(x){return x.id===ed})[0];if(!m)return;
+    editId=ed;$("n").value=m.name;$("d").value=m.dose||"";setTime(m.time);
+    $("ftitle").textContent="Edit medicine";$("fbtn").textContent="Save changes";$("cancel").hidden=false;
+    window.scrollTo({top:0,behavior:"smooth"})}
 });
-document.getElementById("f").addEventListener("submit",function(e){
+$("cancel").onclick=resetForm;
+$("f").addEventListener("submit",function(e){
   e.preventDefault();
-  meds.push({id:"m"+Date.now(),name:document.getElementById("n").value.trim(),dose:document.getElementById("d").value.trim(),time:document.getElementById("t").value});
-  save();e.target.reset();document.getElementById("t").value="08:00";render();
+  var name=$("n").value.trim(),dose=$("d").value.trim(),time=getTime();
+  if(editId){meds.forEach(function(m){if(m.id===editId){m.name=name;m.dose=dose;m.time=time}})}
+  else{meds.push({id:"m"+Date.now(),name:name,dose:dose,time:time})}
+  save();resetForm();render();
 });
-load();render();setInterval(render,60000);
+load();setTime("08:00");render();setInterval(render,60000);
 </script>
 </body>
 </html>
